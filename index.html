@@ -56,11 +56,9 @@
             fileReader.onload = (e) => {
                 const pdfData = e.target.result;
                 var typedarray = new Uint8Array(e.target.result);
-           console.log(typedarray);
                 const pdf = pdfjsLib.getDocument(typedarray);
                 pdf.promise.then((pdf) => {
                     const zip = new JSZip();
-                    console.log(document.getElementById("fileV").value)
                     for (let i = 1; i <= pdf.numPages; i++) {
                         pdf.getPage(i).then((page) => {
                             const canvas = document.createElement('canvas');
@@ -76,7 +74,6 @@
 
                             page.render(renderContext).promise.then(() => {
                                 const imageData = canvas.toDataURL('image/'+document.getElementById("fileT").value);
-                                console.log(imageData);
                                 zip.file(`${i}.${document.getElementById("fileT").value}`, imageData.substr(imageData.indexOf(',') + 1), {base64: true});
                                setTimeout(()=>{zip.generateAsync({type: 'blob'}).then((content) => {
                         downloadLink.href = URL.createObjectURL(content);
