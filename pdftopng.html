@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF to PNG Converter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.5.207/pdf.js"> </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.2.2/jszip.min.js"></script>
+    <style>
+        #fileInput {
+            margin-top: 20px;
+        }
+        #downloadLink {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <center>
+        <h3>PDF to Image</h3>
+    <p>Select your pdf file</p>
+    <hr>
+    <select id="fileT">
+        <option value="png">PNG</option>
+        <option value="jpg">JPG</option>
+      
+    </select>
+<hr>
+    <hr>
+    <select id="fileV">
+        <option value="2">Quality(Middle)</option>
+        <option value="3">Quality(High)</option>
+        <option value="4">Quality(Very High)</option>
+        <option value="1">Quality(Low)</option>
+    
+    </select>
+<hr>
+    <input type="file" id="fileInput" accept=".pdf" />
+    <hr>
+    <br>
+    <br>
+
+    <a id="downloadLink" href="#">Download ZIP</a>
+</center>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.5.207/pdf.worker.js';
+        const fileInput = document.getElementById('fileInput');
+        const downloadLink = document.getElementById('downloadLink');
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file.type !== 'application/pdf') {
+                alert('Please select a PDF file!');
+                return;
+            }
+
+            const fileReader = new FileReader();
+            fileReader.onload = (e) => {
+                const pdfData = e.target.result;
+                var typedarray = new Uint8Array(e.target.result);
+           console.log(typedarray);
+                const pdf = pdfjsLib.getDocument(typedarray);
+                pdf.promise.then((pdf) => {
+                    const zip = new JSZip();
+                    console.log(document.getElementById("fileV").value)
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        pdf.getPage(i).then((page) => {
+                            const canvas = document.createElement('canvas');
+                            const context = canvas.getContext('2d');
+                            const viewport = page.getViewport({scale: document.getElementById("fileV").value});
+                            canvas.width = viewport.width;
+                            canvas.height = viewport.height;
+
+                            const renderContext = {
+                                canvasContext: context,
+                                viewport: viewport
+                            };
+
+                            page.render(renderContext).promise.then(() => {
+                                const imageData = canvas.toDataURL('image/'+document.getElementById("fileT").value);
+                                console.log(imageData);
+                                zip.file(`${i}.${document.getElementById("fileT").value}`, imageData.substr(imageData.indexOf(',') + 1), {base64: true});
+                               setTimeout(()=>{zip.generateAsync({type: 'blob'}).then((content) => {
+                        downloadLink.href = URL.createObjectURL(content);
+                        downloadLink.download = file.name.replace(/\.[^/.]+$/, "")+'.zip';
+                        downloadLink.style.display = 'block';
+                    });},3000)
+                            });
+                        });
+                    }
+
+                    
+                });
+            };
+
+            fileReader.readAsArrayBuffer(file);
+        });
+    </script>
+</body>
+</html>
